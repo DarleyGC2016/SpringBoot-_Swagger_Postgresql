@@ -2,6 +2,7 @@ package com.pessoa.spring_app_gradle.models;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
 
 import javax.persistence.Basic;
 import javax.persistence.Column;
@@ -10,23 +11,31 @@ import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
 import javax.persistence.Lob;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
 import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Null;
 import javax.validation.constraints.Size;
 
+import org.hibernate.validator.constraints.Length;
+import org.hibernate.validator.constraints.NotBlank;
 import org.hibernate.validator.constraints.br.CPF;
+import org.springframework.format.annotation.DateTimeFormat;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
 
 @Entity
-@Table(name ="TB_Funcionario")
+@Table(name ="TB_FUNCIONARIO")
 @ApiModel(value = "Funcionário", description = " ")
 public class Funcionario implements Serializable {
 
@@ -39,68 +48,68 @@ public class Funcionario implements Serializable {
 	
 	@ApiModelProperty(position=1)
 	@Column(nullable = false)
-	@NotEmpty(message="Nome não pode ser vazio!!")	
+	@NotEmpty(message="Nome: Não pode ser vazio!!")	
+	@Length(min=3,max=55)
+	@NotNull(message="Nome: Não pode ser Nulo.")
 	private String nome;
 	
-	@Column(name="Data_Aniv",nullable = false)	
+	//@DateTimeFormat(pattern = "dd/MM/yyyy kk:mm")
+	@Column(name="dataNascimento",nullable = false)	
 	@Temporal(TemporalType.DATE)
 	@ApiModelProperty(position=2)
-	private Date dataAniv;
+	@NotNull(message="Data: Não pode ser nula.")
+	@JsonFormat(pattern = "dd/MM/yyyy")
+	private Date dataNascimento = new Date();
 	
 	@Column(nullable = false)
-	@Size(min=8,max=9,message = "Tamanho de sexo")
+	@Size(min=1,max=9,message = "Tamanho de sexo")
+	@Length(min=8,max = 9, message = "Sexo tem um limite do nome do Sexo.")
+	@NotEmpty(message="Sexo: Não pode ser vazio!!")	
+	@NotNull(message="Sexo: Não pode ser Nulo.")
 	@ApiModelProperty(position=3)
 	private String sexo;
 		
 	@Column(nullable = false)
 	@CPF
 	@ApiModelProperty(position=4)
+	@NotEmpty(message="CPF: Não pode ser vazio!!")	
+	@NotNull(message="CPF: Não pode ser Nulo.")
 	private String cpf;
 	
-	@Column(nullable = false) 
-	@Size(min=2,max=50,message = "Tamanho de Cargo")
+	
+	@ManyToOne
+	@JoinColumn(name="cargo_id")
 	@ApiModelProperty(position=5)
-	private String cargo;
+	@NotNull(message="Cargo: Não pode ser Nulo.")
+	private Cargo cargo;
+
 	
 	@Column(nullable = false)
 	@ApiModelProperty(position=6)
+	@NotEmpty(message="RG: Não pode ser vazia!!")	
+	@NotNull(message="RG: Não pode ser Nulo.")
+	@Length(max = 7, message = "RG: tem um limite de 7 números.")
 	private String rg;
 
-	@Column(nullable = true)
-	@Size(min=2,max=50,message = "Tamanho de atividade")
+	@OneToMany(fetch=FetchType.LAZY)
+//	@JoinColumn(name="atividade_epi_id")
 	@ApiModelProperty(position=7)
-	private String atividade;
-	
-	/**
-	 * @Column com o parametro nullable está habilitado para ser nulo.
-	 * @Size para validar epi.
-	 * */	
-	@Column(nullable = true)
-	@Size(min=2,max=50,message = "Tamanho de epi")
-	@ApiModelProperty(position=8)
-	private String epi;
-	/**
-	 * @Column com o parametro nullable está habilitado para ser nulo.
-	 * @Min e @Max para validar 'ca'.
-	 * */
-	@Column(nullable = true)
-	@Min(value = 0, message = "Não usa CA")
-    @Max(value = 9999, message = "CA só podera ter 4 número no máximo ")
-	@ApiModelProperty(position=9)
-	private long ca;
+	@NotEmpty(message="Lista: Não pode está vazio.")
+	private List<EpiAtividade> listaEpiAtividades;
 	
 	@Column(nullable = false)
-	@ApiModelProperty(position=10)
+	@ApiModelProperty(position=8)
+	@NotNull(message="usaEpi: Não pode ser Nulo.")
 	private boolean usaEpi;
 	
 	@Basic(fetch=FetchType.LAZY)
-	@Column(nullable = false)
-	@Lob 
-	@ApiModelProperty(position=11)
-	private byte[] foto;
+	@Column(nullable = true)
+	@Lob
+	@ApiModelProperty(position=9)
+	@NotEmpty(message="Foto: Não pode ser vazia!!")	
+	@NotNull(message="Foto: Não pode ser Nulo.")
+	private String foto;
 
-	
-	
 	public long getId() {
 		return id;
 	}
@@ -117,12 +126,12 @@ public class Funcionario implements Serializable {
 		this.nome = nome;
 	}
 
-	public Date getDataAniv() {
-		return dataAniv;
+	public Date getDataNascimento() {
+		return dataNascimento;
 	}
 
-	public void setDataAniv(Date dataAniv) {
-		this.dataAniv = dataAniv;
+	public void setDataNascimento(Date dataNascimento) {
+		this.dataNascimento = dataNascimento;
 	}
 
 	public String getSexo() {
@@ -141,11 +150,13 @@ public class Funcionario implements Serializable {
 		this.cpf = cpf;
 	}
 
-	public String getCargo() {
+
+	
+	public Cargo getCargo() {
 		return cargo;
 	}
 
-	public void setCargo(String cargo) {
+	public void setCargo(Cargo cargo) {
 		this.cargo = cargo;
 	}
 
@@ -157,29 +168,6 @@ public class Funcionario implements Serializable {
 		this.rg = rg;
 	}
 
-	public String getAtividade() {
-		return atividade;
-	}
-
-	public void setAtividade(String atividade) {
-		this.atividade = atividade;
-	}
-
-	public String getEpi() {
-		return epi;
-	}
-
-	public void setEpi(String epi) {
-		this.epi = epi;
-	}
-
-	public long getCa() {
-		return ca;
-	}
-
-	public void setCa(long ca) {
-		this.ca = ca;
-	}
 
 	public boolean isUsaEpi() {
 		return usaEpi;
@@ -189,19 +177,25 @@ public class Funcionario implements Serializable {
 		this.usaEpi = usaEpi;
 	}
 
-	public byte[] getFoto() {
+	
+	public String getFoto() {
 		return foto;
 	}
 
-	public void setFoto(byte[] foto) {
+	public void setFoto(String foto) {
 		this.foto = foto;
 	}
-	
+
 	public Funcionario() {
 		super();
 	}
-	
-	
-	
-	
+
+	public List<EpiAtividade> getListaEpiAtividades() {
+		return listaEpiAtividades;
+	}
+
+	public void setListaEpiAtividades(List<EpiAtividade> listaEpiAtividades) {
+		this.listaEpiAtividades = listaEpiAtividades;
+	}
+
 }

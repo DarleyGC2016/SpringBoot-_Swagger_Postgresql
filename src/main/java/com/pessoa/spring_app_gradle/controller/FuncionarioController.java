@@ -3,6 +3,7 @@ package com.pessoa.spring_app_gradle.controller;
 
 import java.util.List;
 
+import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,7 +16,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
+import org.springframework.http.MediaType;
 import com.pessoa.spring_app_gradle.models.Funcionario;
 import com.pessoa.spring_app_gradle.repository.FuncionarioRepository;
 
@@ -28,13 +29,21 @@ import io.swagger.annotations.ResponseHeader;
 
 @RestController
 @RequestMapping(path = "/api")
-@Api(value="API REST Funcionarios")
+@Api(
+		value="API REST Funcionarios",
+		produces = MediaType.APPLICATION_JSON_VALUE,
+		tags="Funcionário",
+		description="API - Funcionário"
+	)
 @CrossOrigin(origins="*")
 public class FuncionarioController {
 	
     @Autowired 
     private FuncionarioRepository repository;
+    
 	private List<Funcionario> funcionarios;
+
+	
 
 	public FuncionarioController(FuncionarioRepository repository) {
 		super();
@@ -56,14 +65,14 @@ public class FuncionarioController {
     		    @ResponseHeader(
     		       name = "Funcionário",
     		       description = "uri de um novo funcionário",
-    		       response = String.class
+    		       response = Funcionario.class
     		    )
     		)
     )    
     public Funcionario cadastrarFuncionario(@ApiParam(value= "Funcionário",
                                                       name="funcionário",
                                                        required=true)
-                                            @RequestBody Funcionario func) { 
+                                            @RequestBody @Valid Funcionario func) { 
     	
        
     	  return repository.save(func);
@@ -77,26 +86,34 @@ public class FuncionarioController {
     @GetMapping(path="/funcionarios")
     @ApiOperation(value="Retorna um Lista de Funcionários ")
     @ApiResponses(
-    		@ApiResponse(
-    		  code= 201,
-    		  message= "Listar funcionários",
-    		  response = Funcionario.class,
-    		  responseHeaders = 
-    		    @ResponseHeader(
-    		       name = "Funcionários",
-    		       description = "uri de lista funcionários",
-    		       response = String.class
-    		    )
-    		)
+    		{
+    		 @ApiResponse(
+	    		  code= 201,
+	    		  message= "Listar funcionários",
+	    		  response = Funcionario.class,
+	    		  responseHeaders = 
+	    		    @ResponseHeader(
+	    		       name = "Funcionários",
+	    		       description = "uri de lista funcionários",
+	    		       response = Funcionario.class
+	    		    )
+                ),
+	    		@ApiResponse(
+		  	    		  code= 500,
+		  	    		  message= "Não foi encontrado nenhum funcionário",
+		  	    		  response = String.class,
+		  	    		  responseHeaders = 
+		  	    		    @ResponseHeader(
+		  	    		       name = "Erro",
+		  	    		       description = "uri de uma pesquisa para obter um funcionário",
+		  	    		       response = String.class
+		  	    		    )
+		  	    		)
+	    		}
     )    
     public List<Funcionario> findAll(){
-    	funcionarios= repository.findAll();
-    	   if(!funcionarios.isEmpty()) {
-    	      return funcionarios;
-    	   }
-    	   else {
-		      return null;
-    	   }
+    	funcionarios = repository.findAll();
+    	return(!funcionarios.isEmpty())?funcionarios: null;
     }
     
 	/**
@@ -107,17 +124,30 @@ public class FuncionarioController {
     @GetMapping(path="/funcionario/{id}")
     @ApiOperation(value="Pesquisa um Funcionário pelo seu ID ")
     @ApiResponses(
-    		@ApiResponse(
-    		  code= 201,
-    		  message= "Pesquisou um funcionário pelo seu ID",
-    		  response = Funcionario.class,
-    		  responseHeaders = 
-    		    @ResponseHeader(
-    		       name = "ID",
-    		       description = "uri de uma pesquisa para obter um funcionário",
-    		       response = String.class
-    		    )
-    		)
+    		{
+	    		@ApiResponse(
+	    		  code= 201,
+	    		  message= "Pesquisou um funcionário pelo seu ID",
+	    		  response = String.class,
+	    		  responseHeaders = 
+	    		    @ResponseHeader(
+	    		       name = "ID",
+	    		       description = "uri de uma pesquisa para obter um funcionário",
+	    		       response = String.class
+	    		    )
+	    		),
+	    		@ApiResponse(
+	  	    		  code= 500,
+	  	    		  message= "Erro: Não foi encontrado nenhum funcionário pelo ID",
+	  	    		  response = String.class,
+	  	    		  responseHeaders = 
+	  	    		    @ResponseHeader(
+	  	    		       name = "Erro",
+	  	    		       description = "uri de uma pesquisa para obter um funcionário",
+	  	    		       response = String.class
+	  	    		    )
+	  	    		)
+    		}
     ) 
     public Funcionario listaUnicoFunc(@PathVariable long id){
     	return(repository.existsById(id))?repository.findById(id):null;
@@ -143,7 +173,7 @@ public class FuncionarioController {
     		    )
     		)
     )
-    public void delete(@RequestBody Funcionario funcionario) {
+    public void delete(@RequestBody @Valid Funcionario funcionario) {
     	if(repository.existsById(funcionario.getId())==true) {
     		repository.delete(funcionario);
     	}
@@ -158,20 +188,33 @@ public class FuncionarioController {
     @GetMapping(path = "/funcionario/cpf/{cpf}")
     @ApiOperation(value="Pesquisa um Funcionário pelo seu CPF ")
     @ApiResponses(
+       {
     		@ApiResponse(
     		  code= 201,
     		  message= "Pesquisou um funcionário pelo seu CPF",
-    		  response = Funcionario.class,
+    		  response = String.class,
     		  responseHeaders = 
     		    @ResponseHeader(
     		       name = "CPF",
     		       description = "uri do funcionário",
     		       response = String.class
     		    )
-    		)
+    		),
+    		@ApiResponse(
+	  	    		  code= 500,
+	  	    		  message= "CPF: Não foi encontrado nenhum funcionário",
+	  	    		  response = String.class,
+	  	    		  responseHeaders = 
+	  	    		    @ResponseHeader(
+	  	    		       name = "Erro",
+	  	    		       description = "uri de uma pesquisa para obter um funcionário",
+	  	    		       response = String.class
+	  	    		    )
+	  	    		)
+         }
     )
     public Funcionario findCpf (@PathVariable String cpf) {
-    	return repository.findByCpf(cpf);
+    	return (!cpf.isEmpty()&&cpf.length()>0)?repository.findByCpf(cpf):null;
     }
     
     /**
@@ -183,20 +226,33 @@ public class FuncionarioController {
     @GetMapping(path = "/funcionario/nome/{nome}")
     @ApiOperation(value="Pesquisa  um Funcionário pelo nome ")
     @ApiResponses(
+    		{
     		@ApiResponse(
     		  code= 201,
     		  message= "Pesquisou um funcionário pelo seu nome",
-    		  response = Funcionario.class,
+    		  response = String.class,
     		  responseHeaders = 
     		    @ResponseHeader(
     		       name = "Nome do Funcionário",
     		       description = "uri de um funcionário",
     		       response = String.class
     		    )
-    		)
+    		),
+    		@ApiResponse(
+	  	    		  code= 500,
+	  	    		  message= "Erro: Nome do Funcionário",
+	  	    		  response = String.class,
+	  	    		  responseHeaders = 
+	  	    		    @ResponseHeader(
+	  	    		       name = "Erro",
+	  	    		       description = "uri de uma pesquisa para obter o nome funcionário",
+	  	    		       response = String.class
+	  	    		    )
+	  	    		)
+    		}
     )
     public Funcionario findNome(@PathVariable String nome) {
-		return repository.findByNome(nome);
+		return (!nome.isEmpty()&&nome.length()>3)?repository.findByNome(nome):null;
     }
 
     /**
@@ -204,36 +260,24 @@ public class FuncionarioController {
 	 *   entrada : Dados do funcionário.
 	 *   Saída   : Os Dados do funcionário.
 	 **/
-    @PutMapping(path = "/funcionario")
-    @ApiOperation(value="Atualiza um Funcionario")
-    public Funcionario update(@RequestBody Funcionario funcionario) {
-            return repository.save(funcionario);
-    }
-    
-    /**
-   	 *   Objetivo: Pesquisa um Funcionário pelo seu Nome.
-   	 *   entrada : Nome do funcionário.
-   	 *   Saída   : Os Dados do funcionário.
-   	 **/
-    //@ApiOperation é para descrever uma operação no swagger.
-    // @ApiResponses são as respostas para uma ação no swagger.
-    @Transactional 
-    @GetMapping(path = "/funcionario/cargo/{cargo}")   
-    @ApiOperation(value="Pesquisa os Cargos de um ou mais Funcionarios")   
     @ApiResponses(
-    		@ApiResponse(
-    		  code= 201,
-    		  message= "Pesquisou cargo de um o mais funcionários",
-    		  response = Funcionario.class,
-    		  responseHeaders = 
-    		    @ResponseHeader(
-    		       name = "Pesquisou cargo",
-    		       description = "uri de um ou mais funcionários",
-    		       response = String.class
-    		    )
-    		)
+    	       
+    	    		@ApiResponse(
+    	    		  code= 201,
+    	    		  message= "Atualizou um funcionário",
+    	    		  response = String.class,
+    	    		  responseHeaders = 
+    	    		    @ResponseHeader(
+    	    		       name = "CPF",
+    	    		       description = "uri do funcionário",
+    	    		       response = String.class
+    	    		    )
+    	    		)
     )
-    public List<Funcionario> findCargo(@PathVariable String cargo) {
-		return repository.findByCargo(cargo);
-	}
+    @PutMapping(path = "/funcionario")
+    @ApiOperation(value="Atualiza um Funcionário")
+    public Funcionario update(@RequestBody @Valid Funcionario funcionario) {
+            return repository.save(funcionario);
+    }     
+
 }
